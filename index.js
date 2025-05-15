@@ -2,10 +2,12 @@ require('dotenv').config();
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
+var cors = require('cors')
 
 const app = express();
 
 app.use(express.json());
+app.use(cors());
 
 const SECRET = 'CourseScre3t';
 
@@ -92,6 +94,18 @@ app.post("/admin/login",async(req,res) =>{
    }
 })
 
+app.get("/admin/me", authenticateJwt, async (req, res) => {
+  const admin = await Admin.findOne({ username: req.user.username });
+  if (!admin) {
+    res.status(403).json({msg: "Admin doesnt exist"})
+    return
+  }
+  res.json({
+      username: admin.username
+  })
+});
+
+
 app.post("/admin/courses",authenticateJwt,async(req,res)=>{
   const course = new Course(req.body);
   await course.save();
@@ -113,6 +127,13 @@ app.put("/admin/courses/:courseId",authenticateJwt,async(req,res) =>{
         res.status(404).json({message:"Course not found"})
       }
 })
+
+app.get('/admin/course/:courseId', authenticateJwt, async (req, res) => {
+  const courseId = req.params.courseId;
+  console.log("courseId",courseId)
+  const course = await Course.findById(courseId);
+  res.json({ course });
+});
 
 
 app.post("/users/signup",async(req,res) =>{
